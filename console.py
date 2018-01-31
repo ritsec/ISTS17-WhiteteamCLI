@@ -32,6 +32,23 @@ CHANNEL = "#white-team-tool"
 USERNAME = "White Team"
 ICON_EMOJI = ":robot_face:"
 
+# OUR NUMEROUS API'S
+BANK_API_URL = "http://lilbite.org:5000"
+CENTRAL_API_URL = "http://lilbite.org:7000"
+SHIP_API_URL = "http://"
+
+#WHITE TEAM ACCOUNT FOR AUTH SERVER
+AUTH_USERNAME = "theblindmice"
+AUTH_PASSWORD = "basedgodboyuan1016"
+AUTH_API_URL = "http://lilbite.org:8000"
+
+# API ENDPOINTS
+
+AUTH_ENDPOINTS = ['validate-session', 'login', 'update-password',
+                  'expire-session', 'update-session', 'pub-key']
+
+BANK_ENDPOINTS = ['get-balance', 'buy', 'transfer', 'transactions', 'items']
+
 
 def slackUpdate(msg):
     """
@@ -77,6 +94,58 @@ def clear():
     p = subprocess.Popen( "cls" if platform.system() == "Windows" else "echo -e \\\\033c", shell=True)
     p.wait()
 
+
+def api_request(endpoint, data=None, method='POST', token=None):
+    """
+    Makes a request to our api and returns the response
+
+    :param endpoint: the api endpoint to hit
+    :param data: the data to send in dictionary format
+
+    :returns resp: the api response
+    """
+    if endpoint in AUTH_ENDPOINTS:
+        url = "{}/{}".format(AUTH_API_URL, endpoint)
+    elif endpoint in BANK_ENDPOINTS:
+        url = "{}/{}".format(BANK_API_URL, endpoint)
+    else:
+        url = "{}/{}".format(SHIP_API_URL, endpoint)
+    print url
+
+    if method == 'POST':
+        resp = requests.post(url, data=data)
+    else:
+        cookies = {'token': token}
+        resp = requests.get(url, cookies=cookies)
+
+    if resp.status_code == 400:
+        raise Exception("Bad request sent to API")
+
+    if resp.status_code == 403:
+        raise Exception(resp.json()['error'])
+
+    elif resp.status_code != 200:
+        raise Exception("API returned {} for /{}".format(resp.status_code, endpoint))
+
+    resp_data = resp.json()
+    return resp_data
+
+
+def get_token():
+    """
+    Gets an auth token for our white team account from the auth api
+
+    :returns token: the auth token for white team account
+    """
+    data = dict()
+    data['username'] = AUTH_USERNAME
+    data['password'] = AUTH_PASSWORD
+    endpoint = 'login'
+    resp = api_request(endpoint, data=data)
+    if 'token' not in resp:
+        raise Exception('No token in AUTH_API response')
+
+    return resp['token']
 
 class FireThread(threading.Thread):
     """
@@ -140,6 +209,7 @@ class Console(object):
         
         i.e. GetCredits 7
         """
+        token = get_token()
         pass
 
     def AddCredits(self, team, amount, reason):
@@ -148,6 +218,7 @@ class Console(object):
 
         i.e. AddCredits 7 50000 "Completed Challenge"
         """
+        token = get_token()
         slackUpdate("Added {} credits to team {} because: {}".format(amount, team, reason))
     
     def RemoveCredits(self, team, amount, reason):
@@ -156,14 +227,16 @@ class Console(object):
 
         i.e. RemoveCredits 7 50000 "Purchased item at service desk"
         """
+        token = get_token()
         slackUpdate("Removed {} credits from team {} because: {}".format(amount, team, reason))
 
     def SetCredits(self, team, amount, reason):
         """
-        Removes credits from the given team # account. Please also specify a reason.
+        Set the credits for the given team # account. Please also specify a reason.
 
         i.e. SetCredits 7 50000 "Setting up the competition"
         """
+        token = get_token()
         slackUpdate("Set team {} credits to {} because: {}".format(team, amount, reason))
 
     def GetShips(self, team):
@@ -203,7 +276,7 @@ class Console(object):
         """
         valid = input("Are you sure you want to do this?")
         if valid.lower().startswith("y"):
-            slackUpdate("Cleared ships for all teams because: ".format(reason))
+            slackUpdate("Cleared ships for all teams because: {}".format(reason))
 
     def GetKOTH(self):
         """

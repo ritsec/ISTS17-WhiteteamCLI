@@ -35,12 +35,12 @@ ICON_EMOJI = ":robot_face:"
 # OUR NUMEROUS API'S
 BANK_API_URL = "http://lilbite.org:5000"
 CENTRAL_API_URL = "http://lilbite.org:7000"
-SHIP_API_URL = "http://"
+SHIP_API_URL = "http://lilbite.org:6000"
+AUTH_API_URL = "http://lilbite.org:9000"
 
 #WHITE TEAM ACCOUNT FOR AUTH SERVER
 AUTH_USERNAME = "theblindmice"
 AUTH_PASSWORD = "basedgodboyuan1016"
-AUTH_API_URL = "http://lilbite.org:9000"
 
 # API ENDPOINTS
 
@@ -51,6 +51,7 @@ BANK_ENDPOINTS = ['get-balance', 'buy', 'transfer', 'transactions', 'items',
                   'dosh-get-balance', 'dosh-add-credits', 'dosh-set-credits', 
                   'dosh-remove-credits']
 
+CENTRAL_ENDPOINTS = ['status/koth', 'status/alerts']
 
 def slackUpdate(msg):
     """
@@ -110,6 +111,8 @@ def api_request(endpoint, data=None, method='POST', token=None):
         url = "{}/{}".format(AUTH_API_URL, endpoint)
     elif endpoint in BANK_ENDPOINTS:
         url = "{}/{}".format(BANK_API_URL, endpoint)
+    elif: endpoint in CENTRAL_ENDPOINTS:
+        url = "{}/{}".format(CENTRAL_API_URL, endpoint)
     else:
         url = "{}/{}".format(SHIP_API_URL, endpoint)
     print url
@@ -271,8 +274,13 @@ class Console(object):
 
     def GetShips(self, team):
         """
+        Gets the ships for a given team
         """
-        pass
+        token = get_token()
+        resp = api_request("teams/{}".format(team_id), method='GET', token=token)
+        print "Guardian: {} Bomber: {} Striker: {}".format(resp['guardian'], 
+               resp['bomber'], resp['striker'])
+
     
     def AddShips(self, team, shipType, amount, reason):
         """
@@ -280,6 +288,13 @@ class Console(object):
         
         i.e. AddShips 5 striker 1 "Completed Challenge"
         """
+        token = get_token()
+        post_data = dict()
+        post_data['token'] = token
+        post_data['value'] = amount
+        resp = api_request('teams/{}/{}'.format(team, shipType), data=post_data)
+        message = resp['message']
+        print message
         slackUpdate("Added {} {} ships to team {} because: {}".format(amount, shipType, team, reason))
 
     def RemoveShips(self, team, shipType, amount, reason):
@@ -288,6 +303,13 @@ class Console(object):
         
         i.e. RemoveShips 5 striker 4 "Stop"
         """
+        token = get_token()
+        post_data = dict()
+        post_data['token'] = token
+        post_data['value'] = -amount
+        resp = api_request('teams/{}/{}'.format(team, shipType), data=post_data)
+        message = resp['message']
+        print message
         slackUpdate("Removed {} {} ships to team {} because: {}".format(amount, shipType, team, reason))
 
     def ClearShips(self, team, reason):
@@ -296,6 +318,12 @@ class Console(object):
         
         i.e. ClearShips 5 "Sabotage"
         """
+        token = get_token()
+        post_data = dict()
+        post_data['token'] = token
+        resp = api_request('teams/{}/reset'.format(team), data=post_data)
+        message = resp['message']
+        print message
         slackUpdate("Cleared ships from team {} because: {}".format(team, reason))
     
     def ClearAllShips(self, reason):
@@ -304,8 +332,16 @@ class Console(object):
         
         i.e. ClearAllShips
         """
-        valid = input("Are you sure you want to do this?")
+        valid = input("Are you sure you want to do this?(y/n)")
         if valid.lower().startswith("y"):
+            token = get_token()
+            post_data = dict()
+            post_data['token'] = token
+            for x in range(1, 12):
+                resp = api_request('teams/{}/reset'.format(team), data=post_data)
+                message = resp['message']
+                print message
+
             slackUpdate("Cleared ships for all teams because: {}".format(reason))
 
     def GetKOTH(self):
@@ -314,7 +350,9 @@ class Console(object):
 
         i.e. GetKOTH
         """
-        pass
+        resp = api_request('status/koth', method='GET')
+        message = resp['planets']
+        print message
 
     def GetAlerts(self):
         """
@@ -322,7 +360,9 @@ class Console(object):
 
         i.e. GetAlerts
         """
-        pass
+        resp = api_request('status/alerts', method='GET')
+        message = resp['alerts']
+        print message
 
     def CreateAlert(self, name, alert):
         """

@@ -40,14 +40,16 @@ SHIP_API_URL = "http://"
 #WHITE TEAM ACCOUNT FOR AUTH SERVER
 AUTH_USERNAME = "theblindmice"
 AUTH_PASSWORD = "basedgodboyuan1016"
-AUTH_API_URL = "http://lilbite.org:8000"
+AUTH_API_URL = "http://lilbite.org:9000"
 
 # API ENDPOINTS
 
 AUTH_ENDPOINTS = ['validate-session', 'login', 'update-password',
                   'expire-session', 'update-session', 'pub-key']
 
-BANK_ENDPOINTS = ['get-balance', 'buy', 'transfer', 'transactions', 'items']
+BANK_ENDPOINTS = ['get-balance', 'buy', 'transfer', 'transactions', 'items',
+                  'dosh-get-balance', 'dosh-add-credits', 'dosh-set-credits', 
+                  'dosh-remove-credits']
 
 
 def slackUpdate(msg):
@@ -119,6 +121,7 @@ def api_request(endpoint, data=None, method='POST', token=None):
         resp = requests.get(url, cookies=cookies)
 
     if resp.status_code == 400:
+        print resp.json()
         raise Exception("Bad request sent to API")
 
     if resp.status_code == 403:
@@ -210,7 +213,13 @@ class Console(object):
         i.e. GetCredits 7
         """
         token = get_token()
-        pass
+        post_data = dict()
+        post_data['token'] = token
+        post_data['team_id'] = team
+        print post_data
+        resp = api_request('dosh-get-balance', data=post_data)
+        balance = resp['balance']
+        print balance
 
     def AddCredits(self, team, amount, reason):
         """
@@ -219,6 +228,13 @@ class Console(object):
         i.e. AddCredits 7 50000 "Completed Challenge"
         """
         token = get_token()
+        post_data = dict()
+        post_data['token'] = token
+        post_data['team_id'] = team
+        post_data['amount'] = amount
+        resp = api_request('dosh-add-credits', data=post_data)
+        message = resp['success']
+        print message
         slackUpdate("Added {} credits to team {} because: {}".format(amount, team, reason))
     
     def RemoveCredits(self, team, amount, reason):
@@ -228,6 +244,13 @@ class Console(object):
         i.e. RemoveCredits 7 50000 "Purchased item at service desk"
         """
         token = get_token()
+        post_data = dict()
+        post_data['token'] = token
+        post_data['team_id'] = team
+        post_data['amount'] = amount
+        resp = api_request('dosh-remove-credits', data=post_data)
+        message = resp['success']
+        print message
         slackUpdate("Removed {} credits from team {} because: {}".format(amount, team, reason))
 
     def SetCredits(self, team, amount, reason):
@@ -237,6 +260,13 @@ class Console(object):
         i.e. SetCredits 7 50000 "Setting up the competition"
         """
         token = get_token()
+        post_data = dict()
+        post_data['token'] = token
+        post_data['team_id'] = team
+        post_data['amount'] = amount
+        resp = api_request('dosh-set-credits', data=post_data)
+        message = resp['success']
+        print message
         slackUpdate("Set team {} credits to {} because: {}".format(team, amount, reason))
 
     def GetShips(self, team):

@@ -48,10 +48,10 @@ AUTH_ENDPOINTS = ['validate-session', 'login', 'update-password',
                   'expire-session', 'update-session', 'pub-key']
 
 BANK_ENDPOINTS = ['get-balance', 'buy', 'transfer', 'transactions', 'items',
-                  'dosh-get-balance', 'dosh-add-credits', 'dosh-set-credits', 
+                  'dosh-get-balance', 'dosh-add-credits', 'dosh-set-credits',
                   'dosh-remove-credits']
 
-CENTRAL_ENDPOINTS = ['status/koth', 'status/alerts']
+CENTRAL_ENDPOINTS = ['status/koth', 'status/alerts', 'clear/alert', 'create/alert']
 
 def slackUpdate(msg):
     """
@@ -111,7 +111,7 @@ def api_request(endpoint, data=None, method='POST', token=None):
         url = "{}/{}".format(AUTH_API_URL, endpoint)
     elif endpoint in BANK_ENDPOINTS:
         url = "{}/{}".format(BANK_API_URL, endpoint)
-    elif: endpoint in CENTRAL_ENDPOINTS:
+    elif endpoint in CENTRAL_ENDPOINTS:
         url = "{}/{}".format(CENTRAL_API_URL, endpoint)
     else:
         url = "{}/{}".format(SHIP_API_URL, endpoint)
@@ -277,15 +277,15 @@ class Console(object):
         Gets the ships for a given team
         """
         token = get_token()
-        resp = api_request("teams/{}".format(team_id), method='GET', token=token)
-        print "Guardian: {} Bomber: {} Striker: {}".format(resp['guardian'], 
-               resp['bomber'], resp['striker'])
+        resp = api_request("teams/{}".format(team), method='GET', token=token)
+        print "Guardian: {} Bomber: {} Striker: {}".format(resp['guardian'],
+                                                           resp['bomber'], resp['striker'])
 
-    
+
     def AddShips(self, team, shipType, amount, reason):
         """
         Adds ships of the given type to a team.
-        
+
         i.e. AddShips 5 striker 1 "Completed Challenge"
         """
         token = get_token()
@@ -300,7 +300,7 @@ class Console(object):
     def RemoveShips(self, team, shipType, amount, reason):
         """
         Removes ships of the given type from a team.
-        
+
         i.e. RemoveShips 5 striker 4 "Stop"
         """
         token = get_token()
@@ -315,7 +315,7 @@ class Console(object):
     def ClearShips(self, team, reason):
         """
         Clear a teams ships. This will set all ship types to 0.
-        
+
         i.e. ClearShips 5 "Sabotage"
         """
         token = get_token()
@@ -325,11 +325,11 @@ class Console(object):
         message = resp['message']
         print message
         slackUpdate("Cleared ships from team {} because: {}".format(team, reason))
-    
+
     def ClearAllShips(self, reason):
         """
         Removes all ships of all types from all teams.
-        
+
         i.e. ClearAllShips
         """
         valid = input("Are you sure you want to do this?(y/n)")
@@ -337,7 +337,7 @@ class Console(object):
             token = get_token()
             post_data = dict()
             post_data['token'] = token
-            for x in range(1, 12):
+            for team in range(1, 12):
                 resp = api_request('teams/{}/reset'.format(team), data=post_data)
                 message = resp['message']
                 print message
@@ -367,11 +367,19 @@ class Console(object):
     def CreateAlert(self, name, alert):
         """
         Issues an alert from Whiteteam. This will be displayed on Blue Team command center interfaces.
-        
+
         name: Name of the alert. This is used for tracking so that when the alert is over it may be deactivated.
 
         i.e. CreateAlert WhiteTeamStore "White Team store offline for the next 15 minutes"
         """
+        token = get_token()
+        post_data = dict()
+        post_data['token'] = token
+        post_data['name'] = name
+        post_data['message'] = alert
+        resp = api_request('create/alert', data=post_data)
+        message = resp['success']
+        print message
         slackUpdate("@channel ALERT ({}): {}".format(name, alert))
 
     def ClearAlert(self, name):
@@ -382,6 +390,13 @@ class Console(object):
 
         i.e. ClearAlert WhiteTeamStore
         """
+        token = get_token()
+        post_data = dict()
+        post_data['token'] = token
+        post_data['name'] = name
+        resp = api_request('clear/alert', data=post_data)
+        message = resp['success']
+        print message
         slackUpdate("@channel Cleared alert: {}".format(name))
 
 

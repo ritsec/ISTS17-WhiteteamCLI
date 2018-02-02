@@ -117,10 +117,10 @@ def api_request(endpoint, data=None, method='POST', token=None):
         url = "{}/{}".format(SHIP_API_URL, endpoint)
     print url
 
+    cookies = {'token': token}
     if method == 'POST':
-        resp = requests.post(url, data=data)
+        resp = requests.post(url, json=data, cookies=cookies)
     else:
-        cookies = {'token': token}
         resp = requests.get(url, cookies=cookies)
 
     if resp.status_code == 400:
@@ -290,9 +290,8 @@ class Console(object):
         """
         token = get_token()
         post_data = dict()
-        post_data['token'] = token
         post_data['value'] = amount
-        resp = api_request('teams/{}/{}'.format(team, shipType), data=post_data)
+        resp = api_request('teams/{}/{}'.format(team, shipType), data=post_data, token=token)
         message = resp['message']
         print message
         slackUpdate("Added {} {} ships to team {} because: {}".format(amount, shipType, team, reason))
@@ -305,9 +304,8 @@ class Console(object):
         """
         token = get_token()
         post_data = dict()
-        post_data['token'] = token
         post_data['value'] = -amount
-        resp = api_request('teams/{}/{}'.format(team, shipType), data=post_data)
+        resp = api_request('teams/{}/{}'.format(team, shipType), data=post_data, token=token)
         message = resp['message']
         print message
         slackUpdate("Removed {} {} ships to team {} because: {}".format(amount, shipType, team, reason))
@@ -319,9 +317,7 @@ class Console(object):
         i.e. ClearShips 5 "Sabotage"
         """
         token = get_token()
-        post_data = dict()
-        post_data['token'] = token
-        resp = api_request('teams/{}/reset'.format(team), data=post_data)
+        resp = api_request('teams/{}/reset'.format(team), token=token)
         message = resp['message']
         print message
         slackUpdate("Cleared ships from team {} because: {}".format(team, reason))
@@ -335,10 +331,8 @@ class Console(object):
         valid = input("Are you sure you want to do this?(y/n)")
         if valid.lower().startswith("y"):
             token = get_token()
-            post_data = dict()
-            post_data['token'] = token
             for team in range(1, 12):
-                resp = api_request('teams/{}/reset'.format(team), data=post_data)
+                resp = api_request('teams/{}/reset'.format(team), token=token)
                 message = resp['message']
                 print message
 

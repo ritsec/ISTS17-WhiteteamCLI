@@ -272,6 +272,17 @@ class Console(object):
         print message
         slackUpdate("Set team {} credits to {} because: {}".format(team, amount, reason))
 
+
+    def GetAllShips(self):
+        """
+        Gets the ships for a given team
+        """
+        token = get_token()
+        resp = api_request("teams", method='GET', token=token)
+        for team, x in enumerate(resp['teams']):
+            print "Team {}: Guardians {} Bombers {} Striker {}".format(team+1, x['guardian'], x['bomber'], x['striker'])
+
+
     def GetShips(self, team):
         """
         Gets the ships for a given team

@@ -33,10 +33,10 @@ USERNAME = "White Team"
 ICON_EMOJI = ":robot_face:"
 
 # OUR NUMEROUS API'S
-BANK_API_URL = "http://lilbite.org:5000"
-CENTRAL_API_URL = "http://lilbite.org:7000"
-SHIP_API_URL = "http://lilbite.org:6000"
-AUTH_API_URL = "http://lilbite.org:9000"
+CENTRAL_API_URL = "http://10.0.20.21:7000"
+BANK_API_URL = "http://10.0.20.21:5000"
+SHIP_API_URL = "http://10.0.20.21:6000"
+AUTH_API_URL = "http://10.0.20.21:9000"
 
 #WHITE TEAM ACCOUNT FOR AUTH SERVER
 AUTH_USERNAME = "theblindmice"

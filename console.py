@@ -119,6 +119,8 @@ def api_request(endpoint, data=None, method='POST', token=None):
 
     cookies = {'token': token}
     if method == 'POST':
+        print data
+        print url
         resp = requests.post(url, json=data, cookies=cookies)
     else:
         resp = requests.get(url, cookies=cookies)
@@ -281,6 +283,15 @@ class Console(object):
         resp = api_request("teams", method='GET', token=token)
         for team, x in enumerate(resp['teams']):
             print "Team {}: Guardians {} Bombers {} Striker {}".format(team+1, x['guardian'], x['bomber'], x['striker'])
+
+    def GetAllStats(self):
+        """
+        Gets the ships for a given team
+        """
+        token = get_token()
+        resp = api_request("teams", method='GET', token=token)
+        for team, x in enumerate(resp['teams']):
+            print "Team {}: Health {} Damage {} Speed {}".format(team+1, x['health'], x['damage'], x['speed'])
 
 
     def GetShips(self, team):

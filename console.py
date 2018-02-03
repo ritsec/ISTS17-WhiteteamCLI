@@ -274,6 +274,18 @@ class Console(object):
         print message
         slackUpdate("Set team {} credits to {} because: {}".format(team, amount, reason))
 
+    def CreateTeam(self, team, name):
+        """
+        Add a new team
+
+        """
+        token = get_token()
+        post_data = dict()
+        post_data['teamNum'] = team
+        post_data['name'] = name
+        resp = api_request('createteam', data=post_data, token=token)
+        message = resp['message']
+        print message
 
     def GetAllShips(self):
         """
@@ -282,7 +294,7 @@ class Console(object):
         token = get_token()
         resp = api_request("teams", method='GET', token=token)
         for team, x in enumerate(resp['teams']):
-            print "Team {}: Guardians {} Bombers {} Striker {}".format(team+1, x['guardian'], x['bomber'], x['striker'])
+            print "Team {}: Guardians {} Bombers {} Striker {}".format(team, x['guardian'], x['bomber'], x['striker'])
 
     def GetAllStats(self):
         """
@@ -291,7 +303,7 @@ class Console(object):
         token = get_token()
         resp = api_request("teams", method='GET', token=token)
         for team, x in enumerate(resp['teams']):
-            print "Team {}: Health {} Damage {} Speed {}".format(team+1, x['health'], x['damage'], x['speed'])
+            print "Team {}: Health {} Damage {} Speed {}".format(team, x['health'], x['damage'], x['speed'])
 
 
     def GetShips(self, team):

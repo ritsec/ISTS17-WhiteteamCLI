@@ -274,6 +274,35 @@ class Console(object):
         print message
         slackUpdate("Set team {} credits to {} because: {}".format(team, amount, reason))
 
+    def GetAllCredits(self):
+        """
+        Gets the credits for all teams
+        """
+        team = 1
+        token = get_token()
+        credz = dict()
+        while team != 12:
+            post_data = dict()
+            post_data['token'] = token
+            post_data['team_id'] = team
+            resp = api_request('dosh-get-balance', data=post_data)
+            balance = resp['balance']
+            credz[team] = balance
+            team += 1
+        post_data = dict()
+        post_data['token'] = token
+        post_data['team_id'] = 99
+        resp = api_request('dosh-get-balance', data=post_data)
+        balance = resp['balance']
+        credz[team] = balance
+
+        team = 1
+        for team in sorted(credz.keys()):
+            if team == 12:
+                print('team: ' + str(99) + ', balance: ' + str(credz[team]))
+            else:
+                print('team: ' + str(team) + ', balance: ' + str(credz[team]))
+
     def CreateTeam(self, team, name):
         """
         Add a new team

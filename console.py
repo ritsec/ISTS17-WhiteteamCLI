@@ -274,7 +274,7 @@ class Console(object):
         print message
         slackUpdate("Set team {} credits to {} because: {}".format(team, amount, reason))
 
-        def GetAllCredits(self):
+    def GetAllCredits(self):
         """
         Gets the credits for all teams
         """

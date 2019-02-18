@@ -7,35 +7,74 @@ import sys
 import subprocess
 import threading
 import yaml
+import config
+import __main__
 
-# Import all the API functions
-from bank_api import *
+# Load new API modules here
+APIS = ["store_api", "auth_api"]
 
-
-FUNCTIONS = {}
-FUNCTIONS.update(bank_api_functions)
+ENDPOINT_MAP = {}
+FUNCTION_MAP = {}
 
 # Shell Information
 PROMPT = "White Team >> "
 HIST_FILE=".whiteteam_history"
 
 HAS_READLINE = True
+
 try:
     import readline
 except ImportError:
     print("Warning: readline not installed. Limited shell capability.")
     HAS_READLINE = False
 
-# Remap input, for python 2/3 compatibility
-try:
-    input = raw_input
-except NameError:
-    pass
+
+def _api_request(endpoint, data=None, method='POST', token=None):
+    """
+    Makes a request to our api and returns the response
+    :param endpoint: the api endpoint to hit
+    :param data: the data to send in dictionary format
+    :returns resp: the api response
+    """
+    ENDPOINT_MAP = __main__.ENDPOINT_MAP
+    url = "{}/{}".format(ENDPOINT_MAP[endpoint], endpoint)
+    #print(url)
+
+    cookies = {'token': token}
+    if method == 'POST':
+        resp = requests.post(url, json=data, cookies=cookies)
+    else:
+        resp = requests.get(url, cookies=cookies)
+
+    if resp.status_code == 400:
+        print(resp.json())
+        raise Exception("Bad request sent to API")
+
+    if resp.status_code == 403:
+        raise Exception(resp.json()['error'])
+
+    elif resp.status_code != 200:
+        raise Exception("API returned {} for /{}".format(resp.status_code, endpoint))
+
+    resp_data = resp.json()
+    return resp_data
 
 
-# open the config file
-with open("config.yml") as fil:
-    config = yaml.load(fil)
+def _get_token():
+    """
+    Gets an auth token for our white team account from the auth api
+    :returns token: the auth token for white team account
+    """
+    data = dict()
+    data.update(config.get("creds", {}))
+    #data['username'] = config.get("creds", {}).get("username"
+    #data['password'] = AUTH_PASSWORD
+    endpoint = 'login'
+    resp = _api_request(endpoint, data=data)
+    if 'token' not in resp:
+        raise Exception('No token in AUTH_API response')
+
+    return resp['token']
 
 
 def slackUpdate(msg):
@@ -55,7 +94,7 @@ def slackUpdate(msg):
         }
     )
 
-def _banner():
+def banner():
     """
     This function prints out the banner.
     """
@@ -85,75 +124,6 @@ def clear():
     p = subprocess.Popen( "cls" if platform.system() == "Windows" else "echo -e \\\\033c", shell=True)
     p.wait()
 
-
-def _api_request(endpoint, data=None, method='POST', token=None):
-    """
-    Makes a request to our api and returns the response
-
-    :param endpoint: the api endpoint to hit
-    :param data: the data to send in dictionary format
-
-    :returns resp: the api response
-    """
-    url = ""
-    # Search through all the endpoints for the one we are given
-    # Build a URL once its found
-    for ep in config.get("endpoints", []):
-        print(ep)
-        if ep.get("endpoints", []) and endpoint in ep.get("endpoints", []):
-            url = "{}/{}".format(ep.get("url"), endpoint)
-    '''
-    if endpoint in AUTH_ENDPOINTS:
-        url = "{}/{}".format(AUTH_API_URL, endpoint)
-    elif endpoint in BANK_ENDPOINTS:
-        url = "{}/{}".format(BANK_API_URL, endpoint)
-    elif endpoint in CENTRAL_ENDPOINTS:
-        url = "{}/{}".format(CENTRAL_API_URL, endpoint)
-    else:
-        url = "{}/{}".format(SHIP_API_URL, endpoint)
-    '''
-    # If the endpoint is not registered, error
-    if not url:
-        raise Exception("Endpoint not found")
-    
-    cookies = {'token': token}
-    if method == 'POST':
-        print(data)
-        print(url)
-        resp = requests.post(url, json=data, cookies=cookies)
-    else:
-        resp = requests.get(url, cookies=cookies)
-
-    if resp.status_code == 400:
-        print(resp.json())
-        raise Exception("Bad request sent to API")
-
-    if resp.status_code == 403:
-        raise Exception(resp.json()['error'])
-
-    elif resp.status_code != 200:
-        raise Exception("API returned {} for /{}".format(resp.status_code, endpoint))
-
-    resp_data = resp.json()
-    return resp_data
-
-
-def get_token():
-    """
-    Gets an auth token for our white team account from the auth api
-
-    :returns token: the auth token for white team account
-    """
-    data = dict()
-    data['username'] = AUTH_USERNAME
-    data['password'] = AUTH_PASSWORD
-    endpoint = 'login'
-    resp = api_request(endpoint, data=data)
-    if 'token' not in resp:
-        raise Exception('No token in AUTH_API response')
-
-    return resp['token']
-
 class FireThread(threading.Thread):
     """
     Run Fire in separate thread to prevent exiting.
@@ -163,7 +133,8 @@ class FireThread(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        fire.Fire(FUNCTIONS)
+        fire.Fire(FUNCTION_MAP, "{}".format(self._cmd))
+
 
 # Tab completion for our console
 class SimpleCompleter(object):
@@ -193,6 +164,25 @@ class SimpleCompleter(object):
 
 
 def main():
+    """
+    Main Method
+    """
+    # Build a map of all the endpoints and all the functions
+    global ENDPOINT_MAP
+    ENDPOINT_MAP = {}
+    global FUNCTION_MAP
+    FUNCTION_MAP = {}
+    
+    for API in APIS:
+        api_module = __import__(API)
+        # Load all the endpoints and map them to the server
+        for endpoint in api_module._endpoints:
+            ENDPOINT_MAP[endpoint] = api_module._server
+
+        # Find all the callable functions for Fire
+        for func in dir(api_module):
+            if not func.startswith("_"):
+                FUNCTION_MAP[func] = getattr(api_module, func)
     # Configure readline
     if HAS_READLINE:
         if os.path.exists(HIST_FILE):
@@ -201,9 +191,9 @@ def main():
         readline.parse_and_bind('set editing-mode vi')
 
         # Build Auto Complete
-        #autocomplete = list(filter(lambda x: not x.startswith('_'), dir(Console)))
-        #completer = SimpleCompleter(autocomplete)
-        #readline.set_completer(completer.complete)
+        autocomplete = list(FUNCTION_MAP.keys())
+        completer = SimpleCompleter(autocomplete)
+        readline.set_completer(completer.complete)
 
     # Loop for input
     cleared = False
@@ -238,5 +228,5 @@ def main():
 
 if __name__ == '__main__':
     NAME = input("Please enter your name: ")
-    _api_request(NAME)
-    #main()
+    main()
+

@@ -1,4 +1,4 @@
-from cli import _api_request, _get_token
+from console import _api_request, _get_token
 import config as _conf
 
 _endpoints = ["get-balance", "buy", "transfer", "transactions", "items",
@@ -7,26 +7,25 @@ _endpoints = ["get-balance", "buy", "transfer", "transactions", "items",
 
 _server = _conf.get("STORE_API")
 
-def GetCredits(team):
+def GetMoney(team):
     """
-    Gets the current credits for a given team #.
+    Gets the current money for a given team #.
     
-    i.e. GetCredits 7
+    i.e. GetMoney 7
     """
     token = _get_token()
     post_data = dict()
     post_data['token'] = token
     post_data['team_id'] = team
-    print(post_data)
     resp = _api_request('admin-get-balance', data=post_data)
     balance = resp['balance']
     print(balance)
 
-def AddCredits(team, amount, reason):
+def AddMoney(team, amount, reason):
     """
-    Adds credits to the given team # account. Please also specify a reason.
+    Adds money to the given team # account. Please also specify a reason.
 
-    i.e. AddCredits 7 50000 "Completed Challenge"
+    i.e. AddMoney 7 50000 "Completed Challenge"
     """
     token = _get_token()
     post_data = dict()
@@ -38,11 +37,11 @@ def AddCredits(team, amount, reason):
     print(message)
     #slackUpdate("Added {} credits to team {} because: {}".format(amount, team, reason))
 
-def RemoveCredits(team, amount, reason):
+def RemoveMoney(team, amount, reason):
     """
-    Removes credits from the given team # account. Please also specify a reason.
+    Removes money from the given team # account. Please also specify a reason.
 
-    i.e. RemoveCredits 7 50000 "Purchased item at service desk"
+    i.e. RemoveMoney 7 50000 "Purchased item at service desk"
     """
     token = _get_token()
     post_data = dict()
@@ -54,11 +53,11 @@ def RemoveCredits(team, amount, reason):
     print(message)
     #slackUpdate("Removed {} credits from team {} because: {}".format(amount, team, reason))
 
-def SetCredits(team, amount, reason):
+def SetMoney(team, amount, reason):
     """
     Set the credits for the given team # account. Please also specify a reason.
 
-    i.e. SetCredits 7 50000 "Setting up the competition"
+    i.e. SetMoney 7 50000 "Setting up the competition"
     """
     token = _get_token()
     post_data = dict()
@@ -70,9 +69,9 @@ def SetCredits(team, amount, reason):
     print(message)
     #slackUpdate("Set team {} credits to {} because: {}".format(team, amount, reason))
 
-def GetAllCredits():
+def GetAllMoney():
     """
-    Gets the credits for all teams
+    Gets the money for all teams
     """
     team = 1
     token = _get_token()

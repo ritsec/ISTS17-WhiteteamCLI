@@ -2,6 +2,7 @@
 creds:
   username: whiteteam
   password: democracy-beans-1337
+
 slack:
   name: "Unnamed User"
   use_slack: True
@@ -12,4 +13,7 @@ slack:
 
 AUTH_API: "http://192.168.58.129:5002"
 STORE_API: "http://192.168.58.129:5001"
-VOTING_API: "http://192.168.58.129:5009"
+VOTE_API: "http://0.0.0.0:80"
+VOTE_API_CREDS:
+  username: admin
+  password: password

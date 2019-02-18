@@ -11,7 +11,7 @@ import config
 import __main__
 
 # Load new API modules here
-APIS = ["store_api", "auth_api"]
+APIS = ["store_api", "auth_api", "votes_api"]
 
 ENDPOINT_MAP = {}
 FUNCTION_MAP = {}

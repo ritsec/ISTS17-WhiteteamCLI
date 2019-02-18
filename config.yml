@@ -1,0 +1,15 @@
+---
+creds:
+  username: whiteteam
+  password: democracy-beans-1337
+slack:
+  name: "Unnamed User"
+  use_slack: True
+  uri: "https://hooks.slack.com/services/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"
+  channel: "#white-team-tool"
+  username: "White Team"
+  icon_emoji: ":robot_face:"
+
+AUTH_API: "http://192.168.58.129:5002"
+STORE_API: "http://192.168.58.129:5001"
+VOTING_API: "http://192.168.58.129:5009"
